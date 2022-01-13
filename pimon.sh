@@ -133,11 +133,11 @@ function checkcall(){
 #	s1checka=$( grep "$call", /usr/local/etc/stripped.csv | head -1 )
 #	echo "$s1checka"
 
-if grep -F "$call", /usr/local/etc/stripped.csv 
+if grep -F "$call,", /usr/local/etc/stripped.csv 
 then  
 	echo -en "${LTGREEN}$Time Call:$call Found in Stripped.csv ${ENDCOLOR} \n" 
 else
-	if grep -F "$call" /usr/local/etc/stripped2.csv 
+	if grep -F "$call," /usr/local/etc/stripped2.csv 
  	then
 		echo -en "${LTCYAN} $Time Call $call Found in Stripped2.csv ${ENDCOLOR} \n"
 	else
@@ -162,7 +162,9 @@ if [ "$oldline" != "$newline" ] &&  [[ "$line1" == *"$substr"* ]]; then
 	call=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | tr "-" " " | tr "/" " " | cut -d " " -f2 )
 
 	clen=$(echo $call | wc -c)
-	if [ "$clen" -gt 3 ] && [ "$clen" -lt 7 ]; then
+echo "Call = $call - $clen"
+
+	if [ "$clen" -gt 3 ] && [ "$clen" -lt 8 ]; then
 		checkcall
 	fi
 	oldline="$newline"
