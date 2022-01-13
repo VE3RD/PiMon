@@ -162,9 +162,9 @@ if [ "$oldline" != "$newline" ] &&  [[ "$line1" == *"$substr"* ]]; then
 	call=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | tr "-" " " | tr "/" " " | cut -d " " -f2 )
 
 	clen=$(echo $call | wc -c)
-echo "Call = $call - $clen"
+	echo "Call = |$call| - $clen"
 
-	if [ "$clen" -gt 3 ] && [ "$clen" -lt 8 ]; then
+	if [ "$clen" -gt 3 ] && [ "$clen" -le 7 ]; then
 		checkcall
 	fi
 	oldline="$newline"
