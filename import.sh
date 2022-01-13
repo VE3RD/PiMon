@@ -22,6 +22,10 @@ YELLOW="\e[33m"
 
 ENDCOLOR="\e[0m"
 
+f1=/home/pi-star/PiMon/ysf.csv
+f2=/usr/local/etc/stripped.csv
+f3=/usr/local/etc/stripped2.csv
+
 
 
 sudo mount -o remount,rw / 
@@ -77,18 +81,18 @@ function updatefromqrz(){
 # get a session key from qrz.com
 session_xml=$(curl -s -X GET 'http://xmldata.qrz.com/xml/current/?username='${user}';password='${password}';agent=qrz_sh')
 
-# check for login errors
+# check for login errors 
 #e=$(printf %s "$session_xml" | grep -oP "(?<=<Error>).*?(?=</Error>)" ) # only works with GNU grep
 e=$(printf %s "$session_xml" | awk -v FS="(<Error>|<\/Error>)" '{print $2}' 2>/dev/null | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
 if [ "$e" != ""  ]
   then
     echo "The following error has occured: $e"
-    exit
+    ###exit
   fi
 
 # extract session key from response
-#session_key=$(printf %s "$session_xml" |grep -oP '(?<=<Key>).*?(?=</Key>)') # only works with GNU grep
-session_key=$(printf %s "$session_xml" | awk -v FS="(<Key>|<\/Key>)" '{print $2}' 2>/dev/null | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
+session_key=$(printf %s "$session_xml" |grep -oP '(?<=<Key>).*?(?=</Key>)') # only works with GNU grep
+#session_key=$(printf %s "$session_xml" | awk -v FS="(<Key>|<\/Key>)" '{print $2}' 2>/dev/null | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
 
 # lookup callsign at qrz.com
 lookup_result=$(curl -s -X GET 'http://xmldata.qrz.com/xml/current/?s='${session_key}';callsign='${call}'')
@@ -100,7 +104,7 @@ ncall="OK"
 e=$(printf %s "$lookup_result" | awk -v FS="(<Error>|<\/Error>)" '{print $2}' 2>/dev/null | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
 if [ "$e" != ""  ]
   then
-    	echo "$call  Not Found at QRZ"
+    	echo "$call - Not Found at QRZ"
 	cnt=$((cnt+1))
 	nocall="$cnt,$call,NoName,NA,NA.NA,NA,NA" 
 	echo "$nocall" >> /usr/local/etc/stripped2.csv
@@ -112,10 +116,10 @@ else
 	#for f in "call" "fname" "name" "addr1" "addr2" "country" "grid" "email" "user" "lotw" "mqsl" "eqsl" "qslmgr"
 	for f in "call" "fname" "name" "addr1" "addr2" "state" "country" 
 	do
-
-  		#z=$(printf %s "$lookup_result" | grep -oP "(?<=<${f}>).*?(?=</${f}>)" ) # only works with GNU grep
+#  		z=$(printf %s "$lookup_result" | grep -oP "(?<=<${f}>).*?(?=</${f}>)" ) # only works with GNU grep
   		z=$(printf %s "$lookup_result" | awk -v FS="(<${f}>|<\/${f}>)" '{print $2}' 2>/dev/null | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
-  		eval "$f='${z}'";
+#  		eval "$f='${z}'"
+ # 		eval "$f=${z}"
 	done
 
 	touch /usr/local/etc/stripped2.csv
@@ -142,16 +146,17 @@ else
 		echo -en "${LTCYAN} $Time Call $call Found in Stripped2.csv ${ENDCOLOR} \n"
 	else
 		echo "$Time Using  QRZ to Locate $call"
-#		updatefromqrz
+		updatefromqrz
+		sleep 5
+
 	fi 
 		   	
 fi
 
 }
 
-function GetLastLine(){
+function GeNextLine(){
 
-        f1=$(ls -tv /var/log/pi-star/MMDVM* | tail -n 1 )
         line1=$(tail -n 1 "$f1" | sed 's/  */ /g')
 	newline="$line1"
 
@@ -173,8 +178,8 @@ fi
 
 function StartUp()
 {
-        f1=$(ls -tv /var/log/pi-star/MMDVM* | tail -n 1 )
-        line1=$(tail -n 1 "$f1" | sed 's/  */ /g')
+#        f1=$(ls -tv /var/log/pi-star/MMDVM* | tail -n 1 )
+#        line1=$(tail -n 1 "$f1" | sed 's/  */ /g')
  	lcntt=$(tail -n1 /usr/local/etc/stripped2.csv |  cut -d "," -f1)
         cnt=$((lcntt))
 	echo "Records Found in stripped2.csv = $cnt"
@@ -188,14 +193,42 @@ callstat=""
 ######### Main Loop Starts Here
 #echo "Starting Loop"
 StartUp
-while true
-do 
-	cm=0	
- 	Time=$(date '+%T')  
-	GetLastLine
-	sync
+
+#while IFS="" read -r p || [ -n "$p" ]
+while IFS="" read -r p 
+do
+	call1=$(echo "$p" | cut -d "," -f 2)
+	echo "     Raw Call = $call1"
+	call=$(echo "$call1" | tr "-" " " | tr "/" " " | cut -d " " -f1 )
+	echo "Stripped Call = $call"
+	
+if [ ! -z "$call" ]; then
+	mt=$(sudo sed -n '/'",$call",'/p' /usr/local/etc/stripped.csv | head -1) > /dev/null
+	if [ -z "$mt" ]; then
+		echo "$call - Not Found in stripped.csv"
+        	mt=$(sudo sed -n '/',"$call",'/p' /usr/local/etc/stripped2.csv | head -1) > /dev/null
+        	if [ -z "$mt" ]; then
+                	echo "$call -- Not Found in stripped2.csv"
+	      		updatefromqrz
+		else
+			echo "$call -- Found in stripped2.csv"
+        	fi
+	else
+		echo "$call - Found in stripped.csv"
+ 
+	fi
+fi
+done < /home/pi-star/PiMon/ysf.csv
+
+
+#while true
+#do 
+#	cm=0	
+# 	Time=$(date '+%T')  
+#	GetLasLine
+#	sync
 #	sleep 5.0
-done
+#done
 
 
 
