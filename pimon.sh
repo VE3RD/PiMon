@@ -22,8 +22,6 @@ YELLOW="\e[33m"
 
 ENDCOLOR="\e[0m"
 
-
-
 sudo mount -o remount,rw / 
 #printf '\e[9;1t'
 
@@ -133,18 +131,24 @@ function checkcall(){
 #	s1checka=$( grep "$call", /usr/local/etc/stripped.csv | head -1 )
 #	echo "$s1checka"
 
-if grep -F ,"$call", /usr/local/etc/stripped.csv 
-then  
-	echo -en "${LTGREEN}$Time Call:$call Found in Stripped.csv ${ENDCOLOR} \n" 
-else
-	if grep -F ,"$call", /usr/local/etc/stripped2.csv 
- 	then
-		echo -en "${LTCYAN} $Time Call $call Found in Stripped2.csv ${ENDCOLOR} \n"
+mt=$(sudo sed -n '/'"$call",'/p' /usr/local/etc/stripped.csv | head -1)
+if [ -z "$mt" ]; then
+        echo "$call Not Found in Stripped"
+        mt=$(sudo sed -n '/'"$call",'/p' /usr/local/etc/stripped2.csv | head -1)
+        if [ -z "$mt" ]; then
+                echo "$call Not Found in Stripped2"
+		updatefromqrz
 	else
-		echo "$Time Using  QRZ to Locate $call"
-#		updatefromqrz
-	fi 
-		   	
+             #   echo "$call Found in Stripped2"
+		echo -en "${LTGREEN}$Time Call:$call Found in Stripped2.csv ${ENDCOLOR} \n" 
+	#	grep -F ,"$call", /usr/local/etc/stripped.csv 
+		line3=$(grep -F ,"$call", /usr/local/etc/stripped2.csv | head -n1)
+		echo "$line3"
+        fi
+else
+	echo -en "${LTGREEN}$Time Call:$call Found in Stripped.csv ${ENDCOLOR} \n" 
+		line3=$(grep -F ,"$call", /usr/local/etc/stripped.csv | head -n1)
+		echo "$line3"
 fi
 
 }
@@ -161,8 +165,10 @@ function GetLastLine(){
 if [ "$oldline" != "$newline" ] &&  [[ "$line1" == *"$substr"* ]]; then
 	call=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | tr "-" " " | tr "/" " " | cut -d " " -f2 )
 
+#echo "$line1"
+
 	clen=$(echo $call | wc -c)
-	echo "Call = |$call| - $clen"
+#	echo "Call = |$call| - $clen"
 
 	if [ "$clen" -gt 3 ] && [ "$clen" -le 7 ]; then
 		checkcall
