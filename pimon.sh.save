@@ -46,7 +46,6 @@ server=""
 call=""
 line2=""
 yat=""
-newcall=""
 
 err_report() 
 { 
@@ -121,6 +120,7 @@ else
 	cnt=$((cnt+1))
 	newcall=$(echo "$cnt","$call","$fname","$name","$addr2","$state","$country") 
 	echo -e "${LTMAG}QRZ: $newcall $cnt added to stripped2.csv ${ENDCOLOR}"
+	echo "$newcall" >> /usr/local/etc/stripped2.csv
 fi
 
 }
@@ -128,37 +128,26 @@ fi
 
 function checkcall(){ 
 
+#	s1checka=$( grep "$call", /usr/local/etc/stripped.csv | head -1 )
 #	echo "$s1checka"
-echo ""
+
 mt=$(sudo sed -n '/'"$call",'/p' /usr/local/etc/stripped.csv | head -1)
 if [ -z "$mt" ]; then
         echo "$call Not Found in Stripped"
         mt=$(sudo sed -n '/'"$call",'/p' /usr/local/etc/stripped2.csv | head -1)
         if [ -z "$mt" ]; then
-		echo ""
                 echo "$call Not Found in Stripped2"
 		updatefromqrz
-		name=$(echo "$newcall" | cut -d "," -f 3  )
-		echo "$newcall" >> /usr/local/etc/stripped2.csv
-		echo "$call $name added to stripped2"
 	else
              #   echo "$call Found in Stripped2"
-		name=$(echo "$mt" | cut -d "," -f 3  )
-
-if [ "$name" == "NoName" ]; then
-		updatefromqrz
-		name=$(echo "$newcall" | cut -d "," -f 3)
-		sed -i 's/'"$call"',NoName/'"$call"','"$name"'/' /usr/local/etc/stripped2.csv		
-		echo "Name updated in Stripped2 for $call - $name"
-fi 
-
-		echo -en "${LTGREEN}$Time Call:$call $name Found in Stripped2.csv ${ENDCOLOR} \n" 
-		line3=$(grep -F ,"$call", /usr/local/etc/stripped2.csv | head -n1)
+		echo -en "${LTGREEN}$Time Call:$call Found in Stripped2.csv ${ENDCOLOR} \n" 
+	#	grep -F ,"$call", /usr/local/etc/stripped.csv 
+		line3=$(grep -F ,"$call", /usr/local/etc/stripped2.csv | head -n 1)
 		echo "$line3"
         fi
 else
 	echo -en "${LTGREEN}$Time Call:$call Found in Stripped.csv ${ENDCOLOR} \n" 
-		line3=$(grep -F ,"$call", /usr/local/etc/stripped.csv | head -n1)
+		line3=$(grep -F ,"$call", /usr/local/etc/stripped.csv | head -n 1)
 		echo "$line3"
 fi
 
@@ -176,7 +165,7 @@ function GetLastLine(){
 if [ "$oldline" != "$newline" ] &&  [[ "$line1" == *"$substr"* ]]; then
 	call=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | tr "-" " " | tr "/" " " | cut -d " " -f2 )
 
-#echo "$line1"
+echo "$line1"
 
 	clen=$(echo $call | wc -c)
 #	echo "Call = |$call| - $clen"
