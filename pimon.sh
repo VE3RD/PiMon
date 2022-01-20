@@ -102,6 +102,8 @@ if [ "$e" != ""  ]
     	echo "$call  Not Found at QRZ"
 	cnt=$((cnt+1))
 	nocall="$cnt,$call,NoName,NA,NA.NA,NA,NA" 
+	sudo mount -o remount,rw / 
+
 	echo "$nocall" >> /usr/local/etc/stripped2.csv
 	ncall="NO"
 #    exit
@@ -116,6 +118,8 @@ else
   		z=$(printf %s "$lookup_result" | awk -v FS="(<${f}>|<\/${f}>)" '{print $2}' 2>/dev/null | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
   		eval "$f='${z}'";
 	done
+
+	sudo mount -o remount,rw / 
 
 	touch /usr/local/etc/stripped2.csv
 	cnt=$((cnt+1))
@@ -133,12 +137,17 @@ echo ""
 mt=$(sudo sed -n '/'"$call",'/p' /usr/local/etc/stripped.csv | head -1)
 if [ -z "$mt" ]; then
         echo "$call Not Found in Stripped"
+        sudo mount -o remount,rw / 
+
+	touch  /usr/local/etc/stripped2.csv
         mt=$(sudo sed -n '/'"$call",'/p' /usr/local/etc/stripped2.csv | head -1)
         if [ -z "$mt" ]; then
 		echo ""
                 echo "$call Not Found in Stripped2"
 		updatefromqrz
 		name=$(echo "$newcall" | cut -d "," -f 3  )
+	sudo mount -o remount,rw / 
+
 		echo "$newcall" >> /usr/local/etc/stripped2.csv
 		echo "$call $name added to stripped2"
 	else
@@ -149,7 +158,7 @@ if [ "$name" == "NoName" ]; then
 		updatefromqrz
 		name=$(echo "$newcall" | cut -d "," -f 3)
 		sed -i 's/'"$call"',NoName/'"$call"','"$name"'/' /usr/local/etc/stripped2.csv		
-		echo "Name updated in Stripped2 for $call - $name"
+		echo "${LTCYAN}Name updated in Stripped2 for $call - $name ${ENDCOLOR}"
 fi 
 
 		echo -en "${LTGREEN}$Time Call:$call $name Found in Stripped2.csv ${ENDCOLOR} \n" 
