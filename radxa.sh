@@ -212,7 +212,7 @@ fi
 if [[ $line1 =~ "network end of" ]]; then
    mode="2N"
    dur=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | cut -d " " -f6 )
-   ber=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | cut -d " " -f10 )
+   ber=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | cut -d " " -f12 )
    pl=$(echo "$line1" | sed 's/  */ /g' | grep -o 'from.*' | cut -d " " -f8 )
 
 fi
