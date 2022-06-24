@@ -12,6 +12,13 @@ set -e
 #set -e 
 #set -o errtrace
 #set -E -o functrace
+#
+###########   Config   #########
+Config=/etc/mmdvmhost
+#Config=/opt/MMDVMHost/MMDVM.ini
+Hosts=/usr/local/etc/DMR_Hosts.txt
+Users=/usr/local/etc/stripped.csv
+#################################
 
 ver=2022062301
 
@@ -93,15 +100,16 @@ function header(){
 #	echo ""
 	echo "Dates and Times Shown are Local to your hotspot"
 #	echo ""
-	echo "0, Log Started $dates" | tee /home/pi-star/radxalog.log > /dev/null
+#	echo "0, Log Started $dates" | tee /home/pi-star/radxalog.log > /dev/null
 #	echo "0, Net Log Started $dates" > /home/pi-star/radxalog.log
 	echo ""
 }
 
 function getserver(){
 #	server=$(grep "$tg" /usr/local/etc/RADXA*.txt |tail -n1 | tr -s '\t' ' ' | cut -d " " -f2)
-	address=$(sudo sed -n '/^[ \t]*\[DMR Network\]/,/\[/s/^[ \t]*Address[ \t]*=[ \t]*//p' /etc/mmdvmhost)
-server=$(grep $address /usr/local/etc/DMR_Hosts.txt | head -1 | cut -f1)
+#	address=$(sudo sed -n '/^[ \t]*\[DMR Network\]/,/\[/s/^[ \t]*Address[ \t]*=[ \t]*//p' /etc/mmdvmhost)
+	address=$(sudo sed -n '/^[ \t]*\[DMR Network\]/,/\[/s/^[ \t]*Address[ \t]*=[ \t]*//p' $Config)
+	server=$(grep $address $Hosts | head -1 | cut -f1)
        if [ -z "$server" ]; then
 		server="N/A"
 	fi
@@ -110,7 +118,7 @@ server=$(grep $address /usr/local/etc/DMR_Hosts.txt | head -1 | cut -f1)
 function getuserinfo(){
 stripped=0
 	if [ ! -z  "$call" ]; then
- 		lines=$(sed -n '/'",$call"',/p' /usr/local/etc/stripped.csv | head -n 1)	
+ 		lines=$(sed -n '/'",$call"',/p' $Users | head -n 1)	
 		
 		if [ "$lines"  ]; then
 			stripped=2
